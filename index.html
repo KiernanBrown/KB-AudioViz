@@ -1,0 +1,1869 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Web Audio Visualizer</title>
+
+    <!-- Google Icons Font -->
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+
+    <!-- Embedded Web Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css?family=Poiret+One|Prompt|Satisfy"
+      rel="stylesheet"
+    />
+
+    <style>
+      body {
+        background: #070707;
+        font-family: tahoma, verdana, sans serif;
+      }
+
+      canvas {
+        margin-left: 10px;
+        margin-top: 10px;
+        box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.5);
+        background: black;
+      }
+
+      div {
+        margin-top: 3px;
+        margin-bottom: 3px;
+      }
+
+      /* Options CSS */
+      #options {
+        font-family: 'Helvetica';
+        background: rgba(91, 91, 91, 0.25);
+        width: 300px;
+        height: 700px;
+        margin-top: -150px;
+        margin-left: 10px;
+        border: 3px solid rgba(62, 0, 86, 0.5);
+        color: rgb(175, 175, 175);
+        padding-left: 2px;
+      }
+
+      /* Controls CSS */
+      #controls {
+        background: #131313;
+        width: 900px;
+        height: 130px;
+        margin-left: 10px;
+        margin-top: -8px;
+        color: rgb(175, 175, 175);
+        border: 3px solid black;
+        padding-top: 10px;
+        text-align: center;
+      }
+
+      /* Play, Fullscreen, and Volume Button CSS */
+      #playButton {
+        float: left;
+        margin-left: 4px;
+        cursor: pointer;
+        font-size: 40px;
+        transition: color 0.25s;
+      }
+
+      #playButton:hover {
+        color: rgba(106, 0, 122, 0.8);
+      }
+
+      #fsButton {
+        cursor: pointer;
+        float: right;
+        margin-right: 4px;
+        font-size: 40px;
+        transition: color 0.25s;
+      }
+
+      #fsButton:hover {
+        color: rgba(106, 0, 122, 0.8);
+      }
+
+      #volume {
+        padding-left: 20px;
+        vertical-align: center;
+        cursor: pointer;
+        font-size: 30px;
+        transition: color 0.25s;
+      }
+
+      #volume:hover {
+        color: rgba(106, 0, 122, 0.8);
+      }
+
+      #volumeSlider {
+        width: 100px;
+      }
+
+      /* My Name CSS */
+      #name {
+        margin: auto;
+        padding-top: 40px;
+        text-align: center;
+        left: 1555px;
+        top: 630px;
+        font-family: 'Satisfy', cursive;
+        color: rgba(122, 122, 122, 0.65);
+      }
+
+      #name h2 {
+        margin-top: -24px;
+      }
+
+      /* Audio Input CSS */
+      #inputLabel {
+        font-family: 'Poiret One', cursive;
+        margin-top: 10px;
+        border: 3px solid black;
+        border-radius: 4px;
+        padding-bottom: 4px;
+        padding-left: 5px;
+        padding-right: 5px;
+        background: rgba(91, 91, 91, 0.65);
+        transition: background 0.25s, border 0.25s;
+        display: inline-block;
+        font-size: 18px;
+        font-weight: bold;
+      }
+
+      #inputLabel:hover {
+        border: 3px solid rgba(106, 0, 122, 0.8);
+        background: rgba(160, 160, 160, 0.65);
+      }
+
+      #inputLabel h2 {
+        margin-top: 6px;
+        margin-bottom: 6px;
+      }
+
+      #audioInput {
+        display: none;
+      }
+
+      /* Slider Styling based on code samples found here: https://www.w3schools.com/howto/howto_js_rangeslider.asp */
+      .slider {
+        /* Override the default appearance */
+        -webkit-appearance: none;
+        appearance: none;
+
+        width: 90%;
+        height: 10px;
+        background: rgb(140, 140, 140);
+        outline: none;
+        opacity: 0.6;
+        -webkit-transition: 0.25s;
+        transition: opacity 0.25s;
+        border-radius: 6px;
+        margin: 10px;
+        border: 2px solid rgba(0, 0, 0, 0.9);
+      }
+
+      .slider:hover {
+        opacity: 1;
+      }
+
+      .slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: url('media/slider.png');
+        cursor: pointer;
+      }
+
+      /* Track Select CSS */
+      #trackSelect {
+        -webkit-appearance: none;
+        appearance: none;
+        padding-left: 4px;
+        padding-right: 4px;
+        padding-top: 2px;
+        padding-bottom: 2px;
+        border: 2px solid black;
+        background: rgb(140, 140, 140);
+        border-radius: 4px;
+        font-size: 20px;
+        transition: border 0.25s;
+      }
+
+      #trackSelect:hover {
+        border: 2px solid rgba(106, 0, 122, 0.8);
+      }
+
+      /* Checkbox CSS */
+      .checkbox {
+        -webkit-appearance: none;
+        appearance: none;
+        vertical-align: bottom;
+        padding-top: 0px;
+        padding-bottom: 0px;
+        margin-top: 0px;
+        margin-bottom: 0px;
+        width: 20px;
+        height: 20px;
+        border: 2px solid rgba(212, 212, 212, 0.6);
+        transition: border-color 0.25s;
+        border-radius: 50%;
+      }
+
+      .checkbox:checked {
+        border: 0px solid black;
+        background: url('media/checkbox.png');
+      }
+
+      .checkbox:hover {
+        border: 2px solid rgba(106, 0, 122, 0.8);
+      }
+
+      .checkbox:hover:checked {
+        border: 0px solid black;
+      }
+    </style>
+    <script>
+      // An IIFE ("Iffy") - see the notes in mycourses
+      (function () {
+        'use strict';
+
+        var NUM_SAMPLES = 256;
+
+        // Song class, takes in a path and tempo, and optional songSpeed
+        function Song(songPath, songSpeed) {
+          this.songPath = songPath;
+          this.songSpeed = songSpeed;
+          var split1 = songPath.split('/');
+          var split2 = split1[1].split('.');
+          this.title = split2[0];
+          this.tempo = 0;
+          this.length = 0;
+          this.beatTiming = 0;
+          this.beatOffset = 0;
+        }
+
+        var audioCtx;
+        var xAspect = 15.0;
+        var yAspect = 8.0;
+
+        var delayAmount = 0.0;
+        var delayNode;
+
+        // Every song's tempo will be figured out through code
+        var song1 = new Song('media/Wake Up, Get Up, Get Out There.m4a');
+        var song2 = new Song('media/The Legend.flac');
+        var song3 = new Song('media/365.m4a');
+        var song4 = new Song('media/The Whims of Fate.m4a');
+        var song5 = new Song('media/Adventure.m4a', 'slow');
+        var song6 = new Song('media/Home (Adrisaurus Cover).m4a', 'slow');
+        var song7 = new Song('media/Death Should Not Have Taken Thee.m4a');
+        var song8 = new Song('media/Bonetrousle.mp3');
+        var song9 = new Song('media/Knight of Firmament.m4a');
+
+        var songs = [
+          song1,
+          song2,
+          song3,
+          song4,
+          song5,
+          song6,
+          song7,
+          song8,
+          song9,
+        ];
+        var currentSong;
+        var startTime;
+        var elapsedTime;
+        var deltaTime;
+        var pastBeats;
+        var pulseTime = 0;
+
+        var audioElement;
+        var analyserNode;
+        var canvas, ctx;
+        var tint = false,
+          invert = false,
+          noise = false,
+          lines = false,
+          additionalFilter = 'none';
+        var tintColor = 'red';
+        var curveType = 'smooth';
+        var maxRadius = 140;
+
+        var songsLoaded = 0;
+        var temposLoaded = false;
+
+        var particles = [];
+        var particleLifetimeModifier = 0.004;
+        var particlePulseModifier = 0.5;
+        var pulsingParticles = true;
+        var minModifier = 1.0;
+        var removedSamples = 12;
+
+        var inverseLoops = [];
+        var maxInverseLoopSize = 350;
+
+        var dataType = 'frequency';
+        var displayCurves = true;
+        var displayBars = true;
+        var displayInnerCircles = true;
+        var displayOuterCircle = true;
+        var displayParticles = true;
+        var clickEvent = 'inverse';
+        var circleRotate = false;
+        var circleRotation = 0;
+
+        var uploadedSong = null;
+        var uploadedSpeed = '';
+
+        var currentWindowWidth;
+        var currentWindowHeight;
+
+        var audioContextStarted = false;
+        var siteInfo = 'The following website is an Audio Visualizer.';
+        var siteInfo2 = 'As audio is vital, headphones';
+        var siteInfo3 = 'are recommended for the best experience!';
+
+        // Particle class
+        function Particle(x, y, size, speed, offset) {
+          this.size = size;
+          this.baseSize = size;
+          this.speed = speed;
+
+          // Give the particle a random color
+          var particleColorNum = Math.floor(Math.random() * 4);
+          switch (particleColorNum) {
+            case 0:
+              this.r = 140;
+              this.g = 20;
+              this.b = 0;
+              break;
+            case 1:
+              this.r = 181;
+              this.g = 104;
+              this.b = 10;
+              break;
+            case 2:
+              this.r = 214;
+              this.g = 182;
+              this.b = 0;
+              break;
+            case 3:
+              this.r = 150;
+              this.g = 0;
+              this.b = 188;
+              break;
+          }
+
+          // Give the particle a random opacity
+          this.opacity = Math.random();
+          if (this.opacity < 0.75) {
+            this.opacity = 0.75;
+          }
+
+          // Particles are given a random direction when created
+          var angle = Math.random() * Math.PI * 2;
+          this.direction = {
+            x: Math.sin(angle),
+            y: Math.cos(angle),
+          };
+
+          // We will adjust the x and y of the particle based on their direction and the given offset
+          this.x = x + this.direction.x * offset;
+          this.y = y + this.direction.y * offset;
+
+          this.inverted = false;
+        }
+
+        // Update function for Particles
+        Particle.prototype.update = function () {
+          // Update the position and opacity of the particle
+          this.x += this.direction.x * (this.speed * deltaTime);
+          this.y += this.direction.y * (this.speed * deltaTime);
+          this.opacity -= particleLifetimeModifier;
+
+          // Have the particle grow/shrink in size based on the beat of the song
+          if (pulsingParticles) {
+            if (
+              pulseTime > 0 &&
+              !audioElement.paused &&
+              !audioElement.volume == 0
+            ) {
+              // Particles grow at half the speed, over a longer period of time, on slower songs
+              if (currentSong.songSpeed == 'slow') {
+                this.size += (this.baseSize * particlePulseModifier) / 2.0;
+              } else {
+                this.size += this.baseSize * particlePulseModifier;
+              }
+            }
+
+            // Particles will shrink back to their baseSize if the pulsetime is 0
+            else {
+              if (this.size > this.baseSize) {
+                this.size -= (this.baseSize * particlePulseModifier) / 2.5;
+                if (this.size < this.baseSize) {
+                  this.size = this.baseSize;
+                }
+              }
+            }
+          }
+
+          // Otherwise, make sure their size is the baseSize
+          else {
+            if (this.size > this.baseSize) {
+              this.size = this.baseSize;
+            }
+          }
+        };
+
+        // Inverse Loop class
+        function InverseLoop(x, y, size) {
+          this.x = x;
+          this.y = y;
+          this.size = size;
+          this.opacity = 0.6;
+        }
+
+        // Update function for Inverse Loops
+        InverseLoop.prototype.update = function () {
+          this.size += (maxInverseLoopSize / 1.05) * deltaTime;
+
+          // Make the Inverse Loop fade out as it reaches the max size
+          if (this.size > maxInverseLoopSize - 120) {
+            this.opacity = (maxInverseLoopSize - this.size) / 200;
+          }
+        };
+
+        function drawClickMessage() {
+          ctx.font = '48pt Poiret One';
+          ctx.strokeStyle = 'white';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.strokeText(
+            'Click to begin!',
+            canvas.width / 2.0,
+            canvas.height / 2.0 + 80
+          );
+
+          ctx.font = '32pt Poiret One';
+          ctx.lineWidth = 1;
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+
+          // Write the site info messages
+          ctx.fillText(siteInfo, canvas.width / 2.0, 100);
+          ctx.strokeText(siteInfo, canvas.width / 2.0, 100);
+
+          ctx.font = '24pt Poiret One';
+          ctx.fillText(siteInfo2, canvas.width / 2.0, 200);
+          ctx.strokeText(siteInfo2, canvas.width / 2.0, 200);
+          ctx.fillText(siteInfo3, canvas.width / 2.0, 236);
+          ctx.strokeText(siteInfo3, canvas.width / 2.0, 236);
+        }
+
+        function drawLoadingMessage() {
+          // Draw a loading message
+          ctx.font = '48pt Poiret One';
+          ctx.strokeStyle = 'white';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.strokeText(
+            'Loading Songs...',
+            canvas.width / 2.0,
+            canvas.height / 2.0
+          );
+        }
+
+        function init() {
+          // Set up canvas stuff
+          canvas = document.querySelector('canvas');
+          ctx = canvas.getContext('2d');
+
+          // Get reference to <audio> element on page
+          audioElement = document.querySelector('audio');
+
+          // Create the audio context
+          analyserNode = createWebAudioContextWithAnalyserNode(audioElement);
+
+          // Get sound track <select> and Full Screen button working
+          setupUI();
+
+          // Mouse event listener
+          canvas.onmousedown = doMousedown;
+
+          // start animation loop
+          update();
+
+          // Display a message asking the user to click on the canvas
+          // This is because user input is now needed for the Audio Context to start
+          drawClickMessage();
+        }
+
+        function doMousedown(e) {
+          var mouse = getMouse(e);
+
+          if (!audioContextStarted) {
+            audioCtx.resume();
+            audioContextStarted = true;
+            return;
+          }
+
+          // Switch statement to handle our different click events
+          switch (clickEvent) {
+            // Create an inverse loop at the mouse position
+            case 'inverse':
+              inverseLoops.push(new InverseLoop(mouse.x, mouse.y, 1));
+              break;
+
+            // Generate Particles at the mouse position
+            case 'particle':
+              for (var i = 0; i < 12; i++) {
+                // Give the particle a random size and create it
+                var particleSize = Math.random() * 3 + 3;
+                particles.push(
+                  new Particle(
+                    mouse.x,
+                    mouse.y,
+                    particleSize,
+                    currentSong.tempo * 1.75,
+                    0
+                  )
+                );
+              }
+              break;
+          }
+        }
+
+        function createWebAudioContextWithAnalyserNode(audioElement) {
+          var analyserNode, sourceNode;
+          // create new AudioContext
+          // The || is because WebAudio has not been standardized across browsers yet
+          // http://webaudio.github.io/web-audio-api/#the-audiocontext-interface
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+          // Create an analyser node
+          analyserNode = audioCtx.createAnalyser();
+
+          // Create DelayNode instance
+          delayNode = audioCtx.createDelay();
+          delayNode.delayTime.setValueAtTime(delayAmount, 0);
+
+          /*
+			We will request NUM_SAMPLES number of samples or "bins" spaced equally 
+			across the sound spectrum.
+			
+			If NUM_SAMPLES (fftSize) is 256, then the first bin is 0 Hz, the second is 172 Hz, 
+			the third is 344Hz. Each bin contains a number between 0-255 representing 
+			the amplitude of that frequency.
+			*/
+
+          // fft stands for Fast Fourier Transform
+          analyserNode.fftSize = NUM_SAMPLES;
+
+          // this is where we hook up the <audio> element to the analyserNode
+          sourceNode = audioCtx.createMediaElementSource(audioElement);
+          //sourceNode.connect(analyserNode);
+
+          // here we connect to the destination i.e. speakers
+          //analyserNode.connect(audioCtx.destination);
+
+          // Connect source node directly to speakers so we can hear the unaltered source in this channel
+          sourceNode.connect(audioCtx.destination);
+
+          // This channel will play and visualize the delay
+          sourceNode.connect(delayNode);
+          delayNode.connect(analyserNode);
+          analyserNode.connect(audioCtx.destination);
+
+          // Explanation:
+          // The destination (speakers) will play both channels simultaneously
+          // If we didn't connect both channels to the destination, we wouldn't hear the delay effect
+
+          for (var i = 0; i < songs.length; i++) {
+            if (songs[i].tempo == 0) {
+              getTempo(songs[i]);
+            }
+          }
+
+          return analyserNode;
+        }
+
+        // Get the tempo of a given song, and set its tempo
+        // Original idea based on a blog post and code samples from José M. Pérez
+        // https://jmperezperez.com/bpm-detection-javascript/
+        // https://github.com/JMPerez/beats-audio-api
+        function getTempo(song) {
+          // Lower and upper bounds for tempo, measured in bpm
+          var lowerBound = 100;
+          var upperBound = 200;
+
+          // Songs that are noted as slow will be measured in a lower range
+          if (song.songSpeed == 'slow') {
+            lowerBound = 40;
+            upperBound = 100;
+          }
+
+          var tempo;
+
+          // Get an ArrayBuffer holding the song
+          var request = new XMLHttpRequest();
+          request.open('GET', song.songPath, true);
+          request.responseType = 'arraybuffer';
+
+          request.onload = function () {
+            var OfflineContext =
+              window.OfflineAudioContext || window.webkitOfflineAudioContext;
+            var offlineCtx = new OfflineContext(2, 75 * 44100, 44100);
+
+            console.dir(offlineCtx);
+
+            // Put the song into an audioBuffer
+            offlineCtx.decodeAudioData(request.response, function (buffer) {
+              // Save the length of the song
+              song.length = buffer.duration;
+
+              var source = offlineCtx.createBufferSource();
+              source.buffer = buffer;
+
+              // Pass the song through a lowpass filter, as this makes it easier to detect the beat
+              var filter = offlineCtx.createBiquadFilter();
+              filter.type = 'lowpass';
+              //filter.frequency.value = 140;
+              filter.frequency.setValueAtTime(140, 0);
+              //filter.Q.value = 1;
+              filter.Q.setValueAtTime(1, 0);
+              source.connect(filter);
+              filter.connect(offlineCtx.destination);
+
+              source.start(0);
+              offlineCtx.startRendering();
+            });
+
+            offlineCtx.oncomplete = function (e) {
+              // Get an audioBuffer holding the filtered version of the song
+              var audioBuffer = e.renderedBuffer;
+
+              var arrayBuffer = [];
+
+              // Take a 60 second clip from the audio buffer, starting from 10 seconds into the song, and put the ChannelData in an ArrayBuffer
+              var clipLength = 44100 * 60;
+              var startPoint = 44100 * 10;
+              startPoint = 0;
+              for (var i = 0; i < clipLength; i++) {
+                // Take the sample from our audioBuffer
+                var sample = audioBuffer.getChannelData(0)[startPoint + i];
+
+                // Right now, these samples are positive and negative floats
+                // We will take the absolute value to make it easier to work with
+                sample = Math.abs(sample);
+                arrayBuffer.push(sample);
+              }
+
+              // Get the peaks from our clip
+              // We will break the song up into sections, with each being 0.25 seconds long, and take the loudest sample (the peak) of that section
+              var sectionSize = 11025;
+
+              var sectionsNum = arrayBuffer.length / sectionSize;
+              var peaks = [];
+
+              for (var i = 0; i < sectionsNum; i++) {
+                var max = 0;
+
+                // Loop through the samples of this section and get the max
+                for (var j = i * sectionSize; j < (i + 1) * sectionSize; j++) {
+                  if (max == 0 || arrayBuffer[j] > max.volume) {
+                    // Save this sample as the new max, giving it's position and volume
+                    max = {
+                      position: j,
+                      volume: arrayBuffer[j],
+                    };
+                  }
+                }
+
+                // Add this peak to our array of peaks
+                peaks.push(max);
+              }
+
+              // Sort the peaks according to volume
+              peaks.sort(function (a, b) {
+                return b.volume - a.volume;
+              });
+
+              // Take the loudest half of the peaks, then resort based on position
+              peaks = peaks.splice(0, peaks.length * 0.5);
+              peaks.sort(function (a, b) {
+                return a.position - b.position;
+              });
+
+              // Now, we measure the distance to other peaks to get our intervals
+              var groups = [];
+
+              // Put each peak into a grouping
+              peaks.forEach(function (peak, index) {
+                for (var i = 1; index + i < peaks.length && i < 10; i++) {
+                  var group = {
+                    tempo:
+                      (60 * 44100) /
+                      (peaks[index + i].position - peak.position),
+                    count: 1,
+                    peaks: [peak],
+                  };
+
+                  // We are normally looking for tempos between 100bpm and 200bpm
+                  // If the song is requested as slow, it will look between 40bpm and 100bpm
+                  while (group.tempo < lowerBound) {
+                    group.tempo *= 2;
+                  }
+
+                  while (group.tempo > upperBound) {
+                    group.tempo /= 2;
+                  }
+
+                  // Round our tempo to the nearest int
+                  group.tempo = Math.round(group.tempo);
+
+                  // If this tempo is already used by another group, increment the count of the existing group
+                  // Otherwise add this group to our groups
+                  var groupUsed = false;
+                  groups.forEach(function (g) {
+                    if (g.tempo == group.tempo) {
+                      g.count++;
+                      g.peaks.push(group.peaks[0]);
+                      groupUsed = true;
+                      return;
+                    }
+                  });
+
+                  if (!groupUsed) {
+                    groups.push(group);
+                  }
+                }
+              });
+
+              // Sort our groups based on count, as the group with the highest count is our tempo
+              var topGroup = groups.sort(function (a, b) {
+                return b.count - a.count;
+              });
+
+              // Tempo Estimate
+              tempo = topGroup[0].tempo;
+
+              song.tempo = tempo;
+              console.log('Loaded the tempo for ' + song.title);
+
+              // Calculate information for our beats
+              // Convert the song length into minutes
+              var songLength = song.length / 60.0;
+
+              // The number of beats the song has is the tempo * songLength
+              var songBeats = songLength * tempo;
+
+              // Our beatTiming will be the length of the song (in seconds) / numBeats
+              // This gives us the amount of time between each beat in the song
+              song.beatTiming = song.length / songBeats;
+
+              // We have the time between beats in the song, now we just have to adjust this so that it is on beat
+              // Get the first peak that is in the group for the tempo we chose
+              // Sort the peaks in this group by their position and take the first one
+              topGroup[0].peaks.sort(function (a, b) {
+                return a.position - b.position;
+              });
+              var firstPeak = topGroup[0].peaks[0];
+
+              // Convert the position to seconds
+              var firstPeakPos = firstPeak.position / sectionSize;
+
+              // Calculate our offset
+              // We will increase our modifier by the beatTiming until it is >= the firstPeakPos
+              var offsetModifier = 0;
+              do {
+                offsetModifier += song.beatTiming;
+              } while (offsetModifier < firstPeakPos);
+
+              // Our beatOffset is the offsetModifier we found - our firstPeakPos
+              // This makes the beatOffset the amount of time that it took to hit our first beat
+              song.beatOffset = offsetModifier - firstPeakPos;
+
+              // With this information, we can find a beat by getting the elapsed time of the song.
+              // If it is greater than our beatTiming * our pastBeats + our beatOffset, we have a beat
+              // Whenever we hit a beat, we increase our pastBeats
+            };
+          };
+
+          // Send our ArrayBuffer request
+          request.send();
+        }
+
+        function setupUI() {
+          // Code for our play and pause button
+          document.querySelector('#playButton').onclick = function (e) {
+            if (audioElement.paused) {
+              this.textContent = 'pause';
+              audioElement.play();
+            } else {
+              this.textContent = 'play_arrow';
+              audioElement.pause();
+            }
+          };
+
+          // Volume and Slider
+          document.querySelector('#volume').onclick = function (e) {
+            if (audioElement.muted) {
+              this.textContent = 'volume_up';
+              audioElement.muted = false;
+            } else {
+              this.textContent = 'volume_off';
+              audioElement.muted = true;
+            }
+          };
+
+          document.querySelector('#volumeSlider').onchange = function (e) {
+            audioElement.volume = e.target.value;
+          };
+
+          // Reset our elapsedTime, pastBeats, and play button when a song ends
+          audioElement.addEventListener('ended', function (e) {
+            elapsedTime = 0;
+            pastBeats = 0;
+            document.querySelector('#playButton').textContent = 'play_arrow';
+          });
+
+          // Track Select
+          document.querySelector('#trackSelect').onchange = function (e) {
+            playStream(audioElement, e.target.value);
+          };
+
+          // Fullscreen Button
+          document.querySelector('#fsButton').onclick = function () {
+            requestFullscreen(canvas);
+          };
+
+          // Data Type Select
+          document.querySelector('#dataTypeSelect').onchange = function (e) {
+            dataType = e.target.value;
+          };
+
+          // Display Checkboxes
+          document.querySelector('#curvesCheckbox').onchange = function (e) {
+            displayCurves = e.target.checked;
+          };
+
+          document.querySelector('#barsCheckbox').onchange = function (e) {
+            displayBars = e.target.checked;
+          };
+
+          document.querySelector('#innerCircleCheckbox').onchange = function (
+            e
+          ) {
+            displayInnerCircles = e.target.checked;
+          };
+
+          document.querySelector('#outerCircleCheckbox').onchange = function (
+            e
+          ) {
+            displayOuterCircle = e.target.checked;
+          };
+
+          document.querySelector('#particleCheckbox').onchange = function (e) {
+            displayParticles = e.target.checked;
+          };
+
+          // Circle Rotation Checkbox
+          document.querySelector('#rotationCheckbox').onchange = function (e) {
+            circleRotate = e.target.checked;
+            circleRotation = 0;
+          };
+
+          // Circle Radius Slider
+          document.querySelector('#circleSlider').onchange = function (e) {
+            // Update our maxRadius
+            maxRadius = e.target.value;
+          };
+
+          // Tint Red Checkbox
+          document.querySelector('#tintCheckbox').onchange = function (e) {
+            tint = e.target.checked;
+          };
+
+          // Tint Color Select
+          document.querySelector('#tintColorSelect').onchange = function (e) {
+            tintColor = e.target.value;
+          };
+
+          // Invert Checkbox
+          document.querySelector('#invertCheckbox').onchange = function (e) {
+            invert = e.target.checked;
+          };
+
+          // Noise Checkbox
+          document.querySelector('#noiseCheckbox').onchange = function (e) {
+            noise = e.target.checked;
+          };
+
+          // Lines Checkbox
+          document.querySelector('#linesCheckbox').onchange = function (e) {
+            lines = e.target.checked;
+          };
+
+          // Additional Filters Select
+          document.querySelector('#filters').onchange = function (e) {
+            additionalFilter = e.target.value;
+          };
+
+          // Curve Type Select
+          document.querySelector('#curveTypeSelect').onchange = function (e) {
+            curveType = e.target.value;
+          };
+
+          // Delay/Reverb Slider
+          document.querySelector('#delaySlider').onchange = function (e) {
+            delayAmount = e.target.value;
+          };
+
+          // Pulsing Particles
+          document.querySelector('#pulseCheckbox').onchange = function (e) {
+            pulsingParticles = e.target.checked;
+          };
+
+          // Click Events
+          document.querySelector('#clickSelect').onchange = function (e) {
+            clickEvent = e.target.value;
+          };
+
+          // Audio Input
+          // File Uploading code based on code found here: https://stackoverflow.com/questions/28619550/javascript-play-uploaded-audio
+          document.querySelector('#audioInput').onchange = function (e) {
+            if (this.files[0] != null) {
+              // Set uploadedSong to be a new Song, passing in the path and speed of the uploaded song
+              uploadedSong = new Song(
+                URL.createObjectURL(this.files[0]),
+                uploadedSpeed
+              );
+
+              // Get the title of the song
+              uploadedSong.title = this.files[0].name.split('.')[0];
+
+              // Get the tempo of the song
+              getTempo(uploadedSong);
+
+              // Pause our audio while this song loads
+              audioElement.pause();
+            }
+          };
+
+          // Uploaded Speed Checkbox
+          document.querySelector('#uploadedSpeedCheckbox').onchange = function (
+            e
+          ) {
+            if (e.target.checked) uploadedSpeed = 'slow';
+            else uploadedSpeed = '';
+          };
+        }
+
+        function playStream(audioElement, path) {
+          audioElement.src = path;
+          audioElement.play();
+          audioElement.volume = 0.2;
+
+          // Set our current song
+          for (var i = 0; i < songs.length; i++) {
+            if (songs[i].songPath == path) {
+              currentSong = songs[i];
+            }
+          }
+
+          // Set our startTime and elapsedTime for the song
+          startTime = audioCtx.currentTime;
+          elapsedTime = 0;
+
+          // Reset our pastBeats. This is used to detect when the song has hit a beat
+          pastBeats = 0;
+
+          // Change our play button and volume slider in case
+          document.querySelector('#playButton').textContent = 'pause';
+          document.querySelector('#volumeSlider').value = 0.2;
+        }
+
+        function update() {
+          // this schedules a call to the update() method in 1/60 seconds
+          requestAnimationFrame(update);
+
+          // Clear the canvas
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          var options = document.querySelector('#options');
+          var cX = 0;
+          var cY = 0;
+          // Update our canvas size, based on the window's current size
+          // Only do this if the window's size has changed since last update
+          if (
+            window.innerWidth != currentWindowWidth ||
+            window.innerHeight != currentWindowHeight
+          ) {
+            do {
+              cX += xAspect;
+              cY += yAspect;
+            } while (
+              cX + xAspect < window.innerWidth - xAspect * 21 &&
+              cY + yAspect < window.innerHeight - yAspect * 21
+            );
+            canvas.width = cX;
+            canvas.height = cY;
+
+            // Adjust our maxInverseLoopSize based on the new canvas size
+            maxInverseLoopSize = (canvas.width + canvas.height) / 6.0;
+
+            // Move our options
+
+            var marginT = -canvas.height - 138 + 'px';
+            options.style.marginTop = marginT;
+            var marginL = canvas.width + 20 + 'px';
+            options.style.marginLeft = marginL;
+          } else {
+            cX = canvas.width;
+            cY = canvas.height;
+          }
+
+          currentWindowWidth = window.innerWidth;
+          currentWindowHeight = window.innerHeight;
+
+          // Change the options border color if colors are inverted
+          if (invert) {
+            options.style.borderColor = 'rgba(193, 255, 169, 0.5)';
+          } else {
+            options.style.borderColor = 'rgba(62, 0, 86, 0.5)';
+          }
+
+          // Move our controls
+          var controls = document.querySelector('#controls');
+          var controlWidth = canvas.width / 1.5;
+          controls.style.width = controlWidth + 'px';
+          marginL = canvas.width / 2.0 - controlWidth / 2.0 + 10 + 'px';
+          controls.style.marginLeft = marginL;
+
+          // Get a modifier, based on this canvas size and our base canvas size, that will be used to scale circle drawings
+          minModifier = Math.min(cX / 1200, cY / 640);
+
+          /*
+				Nyquist Theorem
+				http://whatis.techtarget.com/definition/Nyquist-Theorem
+				The array of data we get back is 1/2 the size of the sample rate 
+			*/
+
+          // Tell the user to click if they have not clicked yet
+          if (!audioContextStarted) {
+            drawClickMessage();
+            return;
+          }
+
+          // Don't update unless all of the songs have their tempos loaded
+          if (!temposLoaded) {
+            songsLoaded = 0;
+            // Check if all songs have their tempos loaded
+            for (var i = 0; i < songs.length; i++) {
+              if (songs[i].tempo != undefined && songs[i].tempo != 0) {
+                songsLoaded++;
+              }
+            }
+
+            // If all songs have their tempos loaded, start playing the first song
+            if (songsLoaded == songs.length) {
+              playStream(audioElement, songs[0].songPath);
+              temposLoaded = true;
+            } else {
+              // Draw a loading message and loading bar and return
+              drawLoadingMessage();
+
+              ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+              ctx.fillRect(
+                canvas.width / 2.0 - 148,
+                canvas.height / 2.0 + 62,
+                (songsLoaded / songs.length) * 296,
+                26
+              );
+              ctx.strokeRect(
+                canvas.width / 2.0 - 150,
+                canvas.height / 2.0 + 60,
+                300,
+                30
+              );
+              return;
+            }
+          }
+
+          // Don't update if a song is being uploaded and its tempo needs to be loaded
+          if (uploadedSong != null) {
+            // Draw a loading message while the song loads
+            if (uploadedSong.tempo == 0 || uploadedSong.tempo == undefined) {
+              ctx.font = '48pt Poiret One';
+              ctx.strokeStyle = 'white';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.strokeText(
+                'Loading New Song...',
+                canvas.width / 2.0,
+                canvas.height / 2.0
+              );
+              return;
+            } else {
+              // Push our song ot our songs list
+              songs.push(uploadedSong);
+
+              // Update our trackSelect to include the new song
+              var trackSelect = document.querySelector('#trackSelect');
+              var newSongElement = document.createElement('option');
+              newSongElement.value = uploadedSong.songPath;
+              newSongElement.innerHTML = uploadedSong.title;
+              trackSelect.appendChild(newSongElement);
+              trackSelect.selectedIndex = songs.length - 1;
+
+              // Reset our uploadedSong to null and play our song
+              uploadedSong = null;
+              playStream(audioElement, songs[songs.length - 1].songPath);
+            }
+          }
+
+          // Update our delayNode
+          delayNode.delayTime.setValueAtTime(delayAmount, 0);
+
+          // create a new array of 8-bit integers (0-255)
+          var data = new Uint8Array(NUM_SAMPLES / 2);
+          data = data.slice(0, data.length - removedSamples);
+
+          // populate the array with the frequency data
+          // notice these arrays can be passed "by reference"
+          if (dataType == 'frequency') analyserNode.getByteFrequencyData(data);
+          // OR
+          else analyserNode.getByteTimeDomainData(data); // waveform data
+
+          // Get our deltaTime
+          deltaTime = audioCtx.currentTime - startTime;
+
+          if (!audioElement.paused) {
+            // Decrease our pulseTime if it is greater than 0
+            if (pulseTime > 0) {
+              pulseTime -= deltaTime;
+            }
+
+            // We increase our elapsedTime by the currentTime - startTime, which is how much time has passed since our last update
+            elapsedTime += deltaTime;
+
+            // Check if this update is at the time of a beat
+            while (
+              elapsedTime >=
+              currentSong.beatTiming * pastBeats + currentSong.beatOffset
+            ) {
+              // Increment our pastBeats, so we know we have hit a beat here, and increase the size of our text
+              // We do this in a while loop to be able to adjust our pastBeats multiple times if needed
+              // (Example: User minimizes this window and then comes back a minute later, multiple beats would have passed)
+              pastBeats++;
+              if (!audioElement.muted) {
+                if (currentSong.songSpeed == 'slow') {
+                  pulseTime = 0.075;
+                } else {
+                  pulseTime = 0.0375;
+                }
+              }
+            }
+          }
+
+          // Adjust our start time to be the current time every time we update
+          startTime = audioCtx.currentTime;
+
+          // DRAW!
+          // Reset inverted for particles
+          for (var i = 0; i < particles.length; i++) {
+            particles[i].inverted = false;
+          }
+
+          // Update our circle's rotation. This is influenced by the tempo of the song
+          circleRotation += (deltaTime * currentSong.tempo) / 60.0;
+
+          // Update and draw Inverse Loops
+          ctx.lineWidth = 6;
+          for (var i = inverseLoops.length - 1; i >= 0; i--) {
+            var iLoop = inverseLoops[i];
+
+            // If the inverse loop is at its max size, remove it
+            if (iLoop.size > maxInverseLoopSize) {
+              inverseLoops.splice(i, 1);
+            }
+
+            // Otherwise update it and draw it
+            else {
+              iLoop.update();
+              ctx.strokeStyle = makeColor(128, 128, 128, iLoop.opacity);
+              ctx.beginPath();
+              ctx.arc(iLoop.x, iLoop.y, iLoop.size, 0, Math.PI * 2, false);
+
+              // Check if particles are in the inverse loop
+              for (var j = 0; j < particles.length; j++) {
+                if (ctx.isPointInPath(particles[j].x, particles[j].y)) {
+                  particles[j].inverted = true;
+                }
+              }
+
+              ctx.stroke();
+            }
+          }
+
+          // Update and draw our particles
+          for (var i = particles.length - 1; i >= 0; i--) {
+            var p = particles[i];
+
+            // If the particle has an opacity of 0 or lower, remove it
+            if (p.opacity <= 0) {
+              particles.splice(i, 1);
+            }
+
+            // Otherwise we update and draw the particle
+            else {
+              p.update();
+              if (displayParticles) {
+                // Invert our color if this particle is in an inverse loop
+                if (p.inverted) {
+                  ctx.fillStyle = makeColor(
+                    255 - p.r,
+                    255 - p.g,
+                    255 - p.b,
+                    p.opacity
+                  );
+                } else {
+                  ctx.fillStyle = makeColor(p.r, p.g, p.b, p.opacity);
+                }
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2, false);
+                ctx.fill();
+              }
+            }
+          }
+
+          ctx.strokeStyle = 'rgba(150, 0, 188, 0.6)';
+          ctx.lineWidth = 4;
+
+          // Draw curves, one going up and one going down
+          if (displayCurves) {
+            drawCurve(data, 1.0);
+            drawCurve(data, -1.0);
+          }
+
+          var largestRadius = 0; // Used in our drawing of the outer circle later on
+
+          // Loop through the data and draw our circles and bars
+          for (var i = 0; i < data.length; i++) {
+            // We will only be drawing circles for 1/2 of the data
+            // This gives us a similar effect but cuts down on the amount of circles being drawn
+            if (displayInnerCircles) {
+              if (i % 2 == 0) {
+                // Draw circles
+                // Orange circles
+                var percent = data[i] / 255;
+                var circleRadius = percent * maxRadius * minModifier;
+                ctx.beginPath();
+                ctx.fillStyle = makeColor(181, 104, 10, 0.36 - percent / 3.0);
+                ctx.arc(
+                  canvas.width / 2,
+                  canvas.height / 2,
+                  circleRadius,
+                  0,
+                  Math.PI * 2,
+                  false
+                );
+                ctx.fill();
+
+                // Red circles, bigger, more transparant
+                ctx.beginPath();
+                ctx.fillStyle = makeColor(90, 20, 0, 0.15 - percent / 10.0);
+                ctx.arc(
+                  canvas.width / 2,
+                  canvas.height / 2,
+                  circleRadius * 1.5,
+                  0,
+                  Math.PI * 2,
+                  false
+                );
+                ctx.fill();
+
+                // Yelow circles, smaller
+                ctx.beginPath();
+                ctx.fillStyle = makeColor(214, 182, 0, 0.4 - percent / 5.0);
+                ctx.arc(
+                  canvas.width / 2,
+                  canvas.height / 2,
+                  circleRadius * 0.5,
+                  0,
+                  Math.PI * 2,
+                  false
+                );
+                ctx.fill();
+
+                // We will also take the largest radius, and use this for drawing another circle with bars at the end
+                if (circleRadius > largestRadius) largestRadius = circleRadius;
+              }
+            }
+
+            // Draw other bars
+            if (displayBars) {
+              ctx.lineCap = 'round';
+              drawBar(data, i);
+            }
+          }
+
+          // Adjust the size of our largestRadius
+          if (largestRadius < maxRadius * 0.7 * minModifier) {
+            largestRadius = maxRadius * 0.7 * minModifier;
+          }
+
+          // Use our data to draw bars around a circle
+          if (displayOuterCircle) {
+            // Adjust based on our rotation if we are rotating
+            ctx.save();
+            ctx.translate(canvas.width / 2.0, canvas.height / 2.0);
+            if (circleRotate) {
+              ctx.rotate(circleRotation);
+            }
+
+            var barSize = 5 * minModifier;
+            if (barSize < 4) {
+              barSize = 4;
+            }
+            for (var i = 0; i < data.length; i++) {
+              ctx.save();
+              ctx.fillStyle = makeColor(140, 140, 140, 0.6);
+              var angle = -(Math.PI * 2.0) * ((data.length - i) / data.length);
+              ctx.translate(
+                -largestRadius * 0.93 * -Math.sin(angle),
+                -largestRadius * 0.93 * Math.cos(angle)
+              );
+              ctx.rotate(angle);
+              ctx.fillRect(0, 0, barSize, -data[i] / 3.3);
+              ctx.restore();
+            }
+
+            // Draw one circle, which the bars will be drawn around
+            ctx.save();
+            ctx.shadowColor = 'rgba(150, 0, 188, 0.68)';
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+            ctx.shadowBlur = 16;
+            ctx.lineWidth = 12;
+            ctx.strokeStyle = makeColor(164, 164, 164, 1.0);
+            ctx.beginPath();
+            ctx.arc(0, 0, largestRadius * 0.9, 0, Math.PI * 2, false);
+            ctx.stroke();
+            ctx.closePath();
+            ctx.restore();
+            ctx.restore();
+          }
+
+          // Create new particles, if the song isn't paused or muted
+          if (
+            !audioElement.paused &&
+            !audioElement.volume == 0 &&
+            !audioElement.muted
+          ) {
+            // Give the particle a random size
+            var particleSize = Math.random() * 3 + 3;
+
+            // If we are displaying the outer circle, we want the particles to be offset to spawn from there
+            var particleOffset = 0;
+            if (displayOuterCircle) {
+              particleOffset = largestRadius * 0.93;
+            }
+
+            // Add our new particle
+            particles.push(
+              new Particle(
+                canvas.width / 2.0,
+                canvas.height / 2.0,
+                particleSize,
+                currentSong.tempo * 1.75,
+                particleOffset
+              )
+            );
+          }
+
+          // Write the tempo of the song in the bottom right corner
+          ctx.font = '24pt Poiret One';
+          ctx.lineWidth = 1;
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+          ctx.strokeStyle = 'rgba(230, 230, 230, 0.4)';
+          ctx.textAlign = 'center';
+          ctx.fillText(
+            currentSong.tempo + ' BPM',
+            canvas.width -
+              ctx.measureText(currentSong.tempo + ' BPM').width / 2.0 -
+              10,
+            canvas.height - 10
+          );
+          ctx.strokeText(
+            currentSong.tempo + ' BPM',
+            canvas.width -
+              ctx.measureText(currentSong.tempo + ' BPM').width / 2.0 -
+              10,
+            canvas.height - 10
+          );
+
+          // Write the title of the song in the top left corner
+          ctx.fillText(
+            currentSong.title,
+            ctx.measureText(currentSong.title).width / 2.0 + 10,
+            30
+          );
+          ctx.strokeText(
+            currentSong.title,
+            ctx.measureText(currentSong.title).width / 2.0 + 10,
+            30
+          );
+
+          // Manipulate Pixels
+          if (tint || invert || noise || lines || additionalFilter != 'none') {
+            manipulatePixels();
+          }
+        }
+
+        // Function to draw a curve given an array of data and a modifier
+        function drawCurve(data, modifier) {
+          // We will create a curve that follows a series of points created by our data
+          ctx.beginPath();
+
+          // Move to our first point
+          ctx.moveTo(0, canvas.height / 2.0 - modifier * data[0]);
+
+          var pointSpacing = canvas.width / (data.length - 1);
+
+          var curveCount = 0;
+          for (curveCount = 0; curveCount < data.length - 2; curveCount++) {
+            if (curveType == 'smooth') {
+              // Get the midpoint of this point and the next point
+              var midX =
+                (curveCount * pointSpacing + (curveCount + 1) * pointSpacing) /
+                2.0;
+              var midY =
+                (canvas.height / 2.0 -
+                  modifier * data[curveCount] +
+                  canvas.height / 2.0 -
+                  modifier * data[curveCount + 1]) /
+                2.0;
+
+              // Curve through this point and the midpoint
+              // By using the midpoint, we get a smoother curve
+              ctx.quadraticCurveTo(
+                curveCount * pointSpacing,
+                canvas.height / 2.0 - modifier * data[curveCount],
+                midX,
+                midY
+              );
+            } else if (curveType == 'rough') {
+              // Curve between this point and the next, which could result in a rougher or spikier curve
+              ctx.quadraticCurveTo(
+                curveCount * pointSpacing,
+                canvas.height / 2.0 - modifier * data[curveCount],
+                (curveCount + 1) * pointSpacing,
+                canvas.height / 2.0 - modifier * data[curveCount + 1]
+              );
+            }
+          }
+
+          // Curve through the last points
+          ctx.quadraticCurveTo(
+            curveCount * pointSpacing,
+            canvas.height / 2.0 - modifier * data[curveCount],
+            (curveCount + 1) * pointSpacing,
+            canvas.height / 2.0 - modifier * data[curveCount + 1]
+          );
+
+          // Stroke our curve
+          ctx.stroke();
+        }
+
+        // Function to draw a bar to the screen, given its position and the data being used
+        function drawBar(data, position) {
+          var dValue = data[position];
+          var barSpace = canvas.width / (data.length - 1);
+          var barWidth = 8 * minModifier;
+
+          ctx.strokeStyle = 'rgba(110, 110, 110, 0.4)';
+          ctx.fillStyle = 'rgba(110, 110, 110, 0.4)';
+          ctx.lineWidth = barWidth * 0.8;
+
+          // Only draw the bar if the data is not 0 when we are displaying the curves, as we don't want the smaller circles on top of the curve
+          if (dValue != 0 || !displayCurves) {
+            // Set the x position of the bar and its top and bottom points
+            var barX = position * barSpace + barWidth / 2.0;
+            var top = canvas.height / 2.0 - dValue / 1.4;
+            var bottom = canvas.height / 2.0 + dValue / 1.4;
+
+            // Create a gradient if the data is not 0
+            if (dValue != 0) {
+              var barGradient = ctx.createLinearGradient(
+                barX,
+                top,
+                barX,
+                bottom
+              );
+              barGradient.addColorStop(0, 'rgba(110, 110, 110, 0.4)');
+              barGradient.addColorStop(0.15, 'rgba(110, 110, 110, 0.4)');
+              barGradient.addColorStop(0.35, 'rgba(90, 0, 120, 0.4)');
+              barGradient.addColorStop(0.5, 'rgba(40, 40, 40, 0.4)');
+              barGradient.addColorStop(0.65, 'rgba(90, 0, 120, 0.4)');
+              barGradient.addColorStop(0.85, 'rgba(110, 110, 110, 0.4)');
+              barGradient.addColorStop(1, 'rgba(110, 110, 110, 0.4)');
+              ctx.strokeStyle = barGradient;
+              ctx.fillStyle = barGradient;
+            }
+
+            // Draw our bar
+            ctx.beginPath();
+            ctx.moveTo(barX, top);
+            ctx.lineTo(barX, bottom);
+            ctx.fill();
+            ctx.stroke();
+          }
+        }
+
+        function manipulatePixels() {
+          // 1. Get all of the rgba pixel data of the canvas by grabbing the ImageData Object
+          var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+          // 2. imageData.data is an 9-bit typed array - values range from 0-255
+          // imageData.data contains 4 values per pixel: 4 x canvas.width x canvas.height = 1024000 values
+          var data = imageData.data;
+          var length = data.length;
+          var width = imageData.width;
+
+          // 3. Iterate through each pixel
+          // Step by 4 to manipulate one pixel each iteration
+          // data[i] is red, data[i + 1] is green, data[i + 2] is blue, data[i + 3] is alpha
+          for (var i = 0; i < length; i += 4) {
+            // 4. Tint the colors based on the selected tint color
+            if (tint) {
+              if (tintColor == 'red') {
+                data[i] = data[i] + 60;
+              } else if (tintColor == 'green') {
+                data[i + 1] = data[i + 1] + 60;
+              } else if (tintColor == 'blue') {
+                data[i + 2] = data[i + 2] + 60;
+              }
+            }
+
+            // 5. Invert every color channel
+            if (invert) {
+              var red = data[i],
+                green = data[i + 1],
+                blue = data[i + 2];
+              data[i] = 255 - red;
+              data[i + 1] = 255 - green;
+              data[i + 2] = 255 - blue;
+              // data[i + 3] is the alpha, we leave this alone
+            }
+
+            // 6. Noise
+            if (noise && Math.random() < 0.06) {
+              data[i] = data[i + 1] = data[i + 2] = 128; // Gray noise
+              //data[i] = data[i + 1] = data[i + 2] = 255;    // White noise
+              //data[i] = data[i + 1] = data[i + 2] = 0;      // Black noise
+              data[i + 3] = 255; // Adjust the alpha so we can see it on the black background
+            }
+
+            // 7. Draw 2-pixel lines every 60 rows
+            if (lines) {
+              var row = Math.floor(i / 4.0 / width);
+              if (row % 60 == 0) {
+                // This row
+                data[i] = data[i + 1] = data[i + 2] = data[i + 3] = 255;
+
+                // Next row
+                data[i + width * 4] =
+                  data[i + width * 4 + 1] =
+                  data[i + width * 4 + 2] =
+                  data[i + width * 4 + 3] =
+                    255;
+              }
+            }
+
+            // 8. Monochrome and Sepia Filters
+            if (additionalFilter != 'none') {
+              // We will be changing the colors to a color with an r, g, and b value that is the average of the current values
+              // This will create a monochrome (black and white) effect
+              var monoColor = (data[i] + data[i + 1] + data[i + 2]) / 3.0;
+              var redMod = 0;
+              var greenMod = 0;
+
+              // If we are doing the sepia filter, we will increase our red and green to give the sepia effect
+              if (additionalFilter == 'sepia') {
+                redMod = 90;
+                greenMod = 40;
+              }
+
+              data[i] = monoColor + redMod;
+              data[i + 1] = monoColor + greenMod;
+              data[i + 2] = monoColor;
+            }
+          }
+
+          // 9. Put the modified dat back on the canvas
+          ctx.putImageData(imageData, 0, 0);
+        }
+
+        // Helper Functions
+        function makeColor(red, green, blue, alpha) {
+          var color =
+            'rgba(' + red + ',' + green + ',' + blue + ', ' + alpha + ')';
+          return color;
+        }
+
+        // Function Name: getMouse()
+        // returns mouse position in local coordinate system of element
+        // Author: Tony Jefferson
+        // Last update: 3/1/2014
+        function getMouse(e) {
+          var mouse = {};
+          mouse.x = e.pageX - e.target.offsetLeft;
+          mouse.y = e.pageY - e.target.offsetTop;
+          return mouse;
+        }
+
+        // FULL SCREEN MODE
+        function requestFullscreen(element) {
+          if (element.requestFullscreen) {
+            element.requestFullscreen();
+          } else if (element.mozRequestFullscreen) {
+            element.mozRequestFullscreen();
+          } else if (element.mozRequestFullScreen) {
+            // camel-cased 'S' was changed to 's' in spec
+            element.mozRequestFullScreen();
+          } else if (element.webkitRequestFullscreen) {
+            element.webkitRequestFullscreen();
+          }
+          // .. and do nothing if the method is not supported
+        }
+
+        window.addEventListener('load', init);
+      })();
+    </script>
+  </head>
+  <body>
+    <canvas id="canvas" width="1200" height="640"></canvas>
+
+    <div id="controls">
+      <audio></audio>
+      <i id="playButton" class="material-icons">play_arrow</i>
+
+      <!-- Track Select and Volume Slider -->
+      <span>
+        <label
+          >Track:
+          <select id="trackSelect">
+            <option value="media/Wake Up, Get Up, Get Out There.m4a">
+              Wake Up, Get Up, Get Out There
+            </option>
+            <option value="media/The Legend.flac">The Legend</option>
+            <option value="media/365.m4a">365</option>
+            <option value="media/The Whims of Fate.m4a">
+              The Whims of Fate
+            </option>
+            <option value="media/Adventure.m4a">Adventure</option>
+            <option value="media/Home (Adrisaurus Cover).m4a">
+              Home (Adrisaurus Cover)
+            </option>
+            <option value="media/Death Should Not Have Taken Thee.m4a">
+              Death Should Not Have Taken Thee
+            </option>
+            <option value="media/Bonetrousle.mp3">Bonetrousle</option>
+            <option value="media/Knight of Firmament.m4a">
+              Knight of Firmament
+            </option>
+          </select>
+        </label>
+        <label>
+          <i id="volume" class="material-icons">volume_up</i>
+        </label>
+        <input
+          class="slider"
+          id="volumeSlider"
+          type="range"
+          min="0.0"
+          max="1.0"
+          step="0.05"
+          value="0.2"
+        />
+      </span>
+
+      <i id="fsButton" class="material-icons">fullscreen</i>
+
+      <div>
+        <!-- Add A Song -->
+        <!-- Custom Styling based on code fragments found here: https://stackoverflow.com/questions/21842274/cross-browser-custom-styling-for-file-upload-button -->
+        <label id="inputLabel">
+          <h2>- Upload Song -</h2>
+          <input type="file" id="audioInput" />
+          <input class="checkbox" type="checkbox" id="uploadedSpeedCheckbox" />
+          <label for="myCheckbox"
+            >Slow Tempo (This song has a tempo of 40-100 BPM)</label
+          >
+        </label>
+      </div>
+    </div>
+
+    <div id="options">
+      <!-- Canvas Effects -->
+      <div>
+        <h3>Canvas Effects</h3>
+        <div>
+          <form id="dataTypeSelect">
+            Frequency:
+            <input checked name="data" value="frequency" type="radio" />
+            Waveform:
+            <input name="data" value="waveform" type="radio" />
+          </form>
+        </div>
+        <div>
+          <label for="myCheckbox">Display Curves</label>
+          <input checked class="checkbox" type="checkbox" id="curvesCheckbox" />
+        </div>
+        <div>
+          <label for="myCheckbox">Display Bars</label>
+          <input checked class="checkbox" type="checkbox" id="barsCheckbox" />
+        </div>
+        <div>
+          <label for="myCheckbox">Display Inner Circles</label>
+          <input
+            checked
+            class="checkbox"
+            type="checkbox"
+            id="innerCircleCheckbox"
+          />
+        </div>
+        <div>
+          <label for="myCheckbox">Display Outer Circle and Circle Bars</label>
+          <input
+            checked
+            class="checkbox"
+            type="checkbox"
+            id="outerCircleCheckbox"
+          />
+        </div>
+        <div>
+          <label for="myCheckbox">Display Particles</label>
+          <input
+            checked
+            class="checkbox"
+            type="checkbox"
+            id="particleCheckbox"
+          />
+        </div>
+        <div>
+          <label for="myCheckbox">Circle Rotation</label>
+          <input class="checkbox" type="checkbox" id="rotationCheckbox" />
+        </div>
+
+        <br />
+        <div>
+          <label for="circleSlider">Circle Radius Slider</label>
+          <input
+            class="slider"
+            id="circleSlider"
+            type="range"
+            min="80"
+            max="180"
+            step="10"
+            value="140"
+          />
+        </div>
+        <div>
+          <label
+            >Curve Type:
+            <select id="curveTypeSelect">
+              <option value="smooth">Smooth</option>
+              <option value="rough">Rough</option>
+            </select>
+          </label>
+        </div>
+        <label for="pulseCheckbox">Pulsing Particles</label>
+        <input checked type="checkbox" class="checkbox" id="pulseCheckbox" />
+      </div>
+
+      <!-- Pixel Manipulation Filters -->
+      <div>
+        <h3>Visual Filters</h3>
+        <div>
+          <label for="myCheckbox">Tint</label>
+          <input class="checkbox" type="checkbox" id="tintCheckbox" />
+          <label
+            >Tint Color:
+            <select id="tintColorSelect">
+              <option value="red">Red</option>
+              <option value="green">Green</option>
+              <option value="blue">Blue</option>
+            </select>
+          </label>
+        </div>
+
+        <div>
+          <span>
+            <label for="myCheckbox">Invert</label>
+            <input class="checkbox" type="checkbox" id="invertCheckbox" />
+          </span>
+          <b> | </b>
+          <span>
+            <label for="myCheckbox">Noise</label>
+            <input class="checkbox" type="checkbox" id="noiseCheckbox" />
+          </span>
+          <b> | </b>
+          <span>
+            <label for="myCheckbox">Lines</label>
+            <input class="checkbox" type="checkbox" id="linesCheckbox" />
+          </span>
+        </div>
+
+        <div>
+          <label
+            >Additional Filters:
+            <select id="filters">
+              <option value="none">None</option>
+              <option value="monochrome">Monochrome</option>
+              <option value="sepia">Sepia</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <!-- Sound Filters -->
+      <div>
+        <h3>Audio Filters</h3>
+        <label for="delaySlider">Delay/Reverb Slider</label>
+        <input
+          class="slider"
+          id="delaySlider"
+          type="range"
+          min="0.0"
+          max="1.0"
+          step="0.1"
+          value="0.0"
+        />
+      </div>
+
+      <!-- Interaction Events -->
+      <div>
+        <h3>Interaction Events</h3>
+        <label
+          >Mouse Click Effect:
+          <select id="clickSelect">
+            <option value="inverse">Inverse Loops</option>
+            <option value="particle">Particle Generation</option>
+          </select>
+        </label>
+      </div>
+
+      <!-- My Name -->
+      <div id="name">
+        <h1>- Audio Visualizer -</h1>
+        <h2>Kiernan Brown</h2>
+      </div>
+    </div>
+  </body>
+</html>
